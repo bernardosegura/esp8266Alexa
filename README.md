@@ -17,12 +17,13 @@ El chip ESP8266 es de bajo costo y cuenta Wi-Fi con un stack TCP/IP completo y u
 # NodeMCU ESP8266 Placa de Desarrollo
 La placa NodeMCU ESP8266 contiene un módulo ESP-12E que contiene un microprocesador de 32 bits. Integra un transceptor WiFi que le permite conectarse a las redes existentes o crear su propia red.
 La red WiFi es una red de radio que funciona en las frecuencias de 2,45 GHz y 5 GHz.
-> Imagen
+
+<img src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/module-nodemcu-esp8266.jpg?raw=true" />
 
 # Pines de la Placa de Desarrollo 
-> Imagen 1
+<img src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/pines-nodemcu-esp8266.jpg?raw=true" />
 
-> Imagen 2
+<img src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/pinout-nodemcu-esp8266.jpg?raw=true" />
 
 # Controlar Televisión y Aire ACondicionado con Alexa de Amazon y Sinric Pro
 Después de analizar y revisar alternativas de servicios que corran sobre la plataforma de inteligencia artificial de amazon,  se decidió utilizar como servicio de enlace [Sinric Pro](https://sinric.pro/es-index.html) el cual tiene tarifas muy bajas y te permite utilizar dos dispositivos gratis. Esto es solo para la interfaz entre aws de amazon y nuestro dispositivo, en un futuro se utilizará uno propio.
@@ -41,13 +42,14 @@ Control remoto para televisores SAMSUNG y aire acondicionado CARRIER (pueden ser
 > Para realizar el desarrollo se utiliza [Arduino](https://www.arduino.cc/) y con la integración de la librerías para el desarrollo de este chip.
 
 # Diagrama y Componentes
-> Componentes
--
--
--
--
-> Diagrama
+### Componentes
+- **2 Leds Infrarojos.**
+- 1 **Transistor 2N2222.**
+- 1 **nodeMCU esp8266.**
+- 1 **Protoboard.**
 
-> Imagen
+### Diagrama
 
-> Imagen
+<img src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/diagrama-nodemcu-esp8266.jpg?raw=true" />
+
+<img src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/IMG_20210730_140147.jpg?raw=true" />
