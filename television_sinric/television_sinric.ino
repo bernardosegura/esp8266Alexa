@@ -4,8 +4,10 @@
 #include <IRsend.h>
 //#include <ESP8266WiFi.h>
 //#include <ESP8266WebServer.h>
-//#include <ArduinoJson.h>
-//#include <EEPROM.h>
+#include <ArduinoJson.h>
+#include <EEPROM.h>
+#include "SdFat.h"
+#include "sdios.h"
 
 #include <Arduino.h>
 #ifdef ESP8266 
@@ -18,12 +20,28 @@
 #include "SinricPro.h"
 #include "SinricProTV.h"
 
-#define WIFI_SSID         "Nombre de la red"    
-#define WIFI_PASS         "pass de la red"
+/*#define WIFI_SSID         "Nombre de la red"    
+#define WIFI_PASS         "pass de la red"*/
 #define APP_KEY           "clave que proviene de sinric pro"      
 #define APP_SECRET        "dato que proviene de sinric pro"  
-#define TV_ID             "ID que proviene de sinric pro"  
+#define TV_ID             "ID que proviene de sinric pro"
 #define BAUD_RATE         9600
+
+#define VCC_SD D2 //controlamos la energia del modulo mediante oftware debido a que no puede iniciar el chip esp8266 si el modulo tiene trjeta y esta con energia.
+const int CS = D8; // Para el NodeMcu
+// const int CS = D4; // Para el Arduino y Wemos
+char WIFI_SSID[30] = "";    
+char WIFI_PASS[30] = "";
+
+#if HAS_SDIO_CLASS
+#define SD_CONFIG SdioConfig(FIFO_SDIO)
+#elif ENABLE_DEDICATED_SPI
+#define SD_CONFIG SdSpiConfig(CS, DEDICATED_SPI, SD_SCK_MHZ(16))
+#else  // HAS_SDIO_CLASS
+#define SD_CONFIG SdSpiConfig(CS, SHARED_SPI, SD_SCK_MHZ(16))
+#endif  // HAS_SDIO_CLASS
+
+SdFs SD;
 
 bool tvPowerState = false;
 unsigned int tvVolume;
@@ -219,14 +237,18 @@ bool onSkipChannels(const String &deviceId, const int channelCount, String &chan
 void setupWiFi() {
   Serial.printf("\r\n[Wifi]: Conectando");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
+ 
+  digitalWrite(BUILTIN_LED, LOW);
 
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.printf(".");
+    Serial.printf(".");    
     delay(250);
   }
   IPAddress localIP = WiFi.localIP();
   Serial.printf("conectado!\r\n[WiFi]: IP-Direccion es %d.%d.%d.%d\r\n", localIP[0], localIP[1], localIP[2], localIP[3]);
-}
+
+  digitalWrite(BUILTIN_LED, HIGH);  
+ }
 
 // setup function for SinricPro
 void setupSinricPro() {
@@ -252,12 +274,77 @@ void setupSinricPro() {
 //////////////////////////////////////////////////////////////////////////
 
 void setup() {
+  int eeLenSSID = 0;
+  int eeLenPASS = 0;
   
   Serial.begin(BAUD_RATE);
   irsend.begin();
-  Serial.println("Sistema de Mando por Voz v1.0");
+  Serial.println("Sistema de Mando por Voz v1.1");
   Serial.print("Creando mando a TV: ");
   Serial.println(idDisp);//nomDisp[idDisp]);
+
+  pinMode(VCC_SD,OUTPUT);
+  Serial.println("Iniciando SdCard...");
+  digitalWrite(VCC_SD,HIGH); 
+    
+  pinMode(BUILTIN_LED, OUTPUT); //indiccador de conecxion.
+
+  EEPROM.begin(62);
+
+  if (SD.begin(SD_CONFIG)) { 
+      FsFile jsonFile; 
+      DynamicJsonDocument json(1024);
+      jsonFile = SD.open("wifi.json");
+
+      if (jsonFile) {
+        // Deserialize the JSON document
+        DeserializationError error = deserializeJson(json, jsonFile);
+        jsonFile.close();
+        
+        if (!error){
+          const char* SSID = json["WIFI_SSID"]; 
+          const char* PASS = json["WIFI_PASS"]; 
+          int lenSSID = strlen(SSID);
+          int lenPASS = strlen(PASS);
+          if (EEPROM.read(0) == 0 && EEPROM.read(1) == 0){
+              saveEEPROM(lenSSID, lenPASS,  SSID ,  PASS, true);          
+          }else{
+            char eeSSID[30] = ""; 
+            char eePASS[30] = ""; 
+            eeLenSSID = EEPROM.read(0);
+            eeLenPASS = EEPROM.read(1);
+            for(int i = 0; i < eeLenSSID; i++ )
+            {
+              sprintf(eeSSID,"%s%c",eeSSID,EEPROM.read(i + 2));
+            }
+          for(int i = 0; i < eeLenPASS; i++ )
+            {
+              sprintf(eePASS,"%s%c",eePASS,EEPROM.read(i + (2 + eeLenSSID)));
+            }
+            if (strcmp(SSID, eeSSID) != 0 ) {
+              saveEEPROM(lenSSID, lenPASS,  SSID ,  PASS,true);
+            }else{
+              if (strcmp(PASS, eePASS) != 0 ) {
+                saveEEPROM(lenSSID, lenPASS,  SSID ,  PASS, false);
+              }                                         
+            }
+          }
+                
+        }
+      }
+    }
+
+  eeLenSSID = EEPROM.read(0);
+  eeLenPASS = EEPROM.read(1);
+  for(int i = 0; i < eeLenSSID; i++ )
+  {
+    sprintf(WIFI_SSID,"%s%c",WIFI_SSID,EEPROM.read(i + 2));
+  }
+  for(int i = 0; i < eeLenPASS; i++ )
+  {
+    sprintf(WIFI_PASS,"%s%c",WIFI_PASS,EEPROM.read(i + (2 + eeLenSSID)));
+  }
+  EEPROM.end();
 
   setupWiFi();
   setupSinricPro();
@@ -267,6 +354,29 @@ void setup() {
 void loop() {
   //ejecutaCmd();
   SinricPro.handle();
+}
+
+void saveEEPROM(int lenSSID, int lenPASS, const char* SSID , const char* PASS, bool ALL){
+  Serial.println("Inicializado almacenaje");
+
+  if (ALL){
+    EEPROM.write(0,lenSSID);
+    Serial.print(lenSSID);    
+    for(int i = 0; i < lenSSID; i++ )
+    {
+      EEPROM.write((i + 2),SSID[i]);
+      Serial.print(".");
+    }
+  }  
+
+  EEPROM.write(1,lenPASS);
+  Serial.print(lenPASS);              
+  
+  for(int i = 0; i < lenPASS; i++ )
+  {
+    EEPROM.write(((i + 2) + lenSSID),PASS[i]);
+    Serial.print(".");
+  } 
 }
 
 void ejecutaCmd(){
