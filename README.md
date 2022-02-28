@@ -37,7 +37,7 @@ Para configurar la red, solo coloque un archivo en una microSD llamado [wifi.jso
 ```json
 {"WIFI_SSID":"nombre de tu red","WIFI_PASS":"clave de tu red"}
 ```
-> Nota: la microSD debe tener el formato Fat16, Fat32 o exFat.<br>
+> **Nota**: la microSD debe tener el formato Fat16, Fat32 o exFat.<br>
 Para realizar el desarrollo se utiliza [Arduino](https://www.arduino.cc/) y con la integración de la librerías para el desarrollo de este chip.
 
 # Diagrama y Componentes
@@ -52,7 +52,7 @@ Para realizar el desarrollo se utiliza [Arduino](https://www.arduino.cc/) y con 
 
 <img width="429" height="420" src="https://github.com/bernardosegura/esp8266Alexa/blob/master/img/circuitoPlaca.jpg?raw=true" />
 
-> Nota: si el lector no tiene grabado los nombres de los pines, se pueden identificar con el grabado que tiene 10K vista de donde esta el modulo de microSD y el primer pin es GND.
+> **Nota**: si el lector no tiene grabado los nombres de los pines, se pueden identificar con el grabado que tiene 10K vista de donde esta el modulo de microSD y el primer pin es GND.
 
 ### Diagrama
 
